@@ -1,34 +1,27 @@
 name: Deploy to EC2
-
 on:
   push:
     branches: [ main ]
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    # "environment" must match the name of your GitHub environment
     environment: prod
-
     steps:
-      - name: Check out
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Copy app to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: "ec2-user"
+          username: ec2-user
           port: 22
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "./Dockerfile, ./app.py, ./requirements.txt"
-          target: ~/message-server
-
+          target: "~/message-server"
       - name: Build and run on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: "ec2-user"
+          username: ec2-user
           port: 22
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
@@ -48,3 +41,5 @@ jobs:
               -e POSTGRES_HOST='${{ secrets.POSTGRES_HOST }}' \
               -e POSTGRES_DB='postgres' \
               message-server:latest
+            echo "Ports:"; docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}' | sed -n '1,5p'
+            echo "Health check:"; curl -s -i http://127.0.0.1:5002/ | sed -n '1,8p'
