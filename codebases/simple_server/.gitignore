@@ -1,0 +1,36 @@
+# OS/editor noise
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.env/
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+dist/
+build/
+
+# Virtual envs
+.venv
+venv/
+
+# Docker
+*.log
+
+# Local config & secrets
+.env*
+*.pem
+scripts/deploy.sh
+
+# Node (if any front-end bits sneak in)
+node_modules/
+
