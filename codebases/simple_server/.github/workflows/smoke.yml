@@ -1,0 +1,29 @@
+name: Smoke test secrets and SSH
+on:
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets exist
+        run: |
+          test -n "${{ secrets.EC2_HOST }}" || (echo "EC2_HOST missing" && exit 1)
+          test -n "${{ secrets.EC2_SSH_KEY }}" || (echo "EC2_SSH_KEY missing" && exit 1)
+          test -n "${{ secrets.POSTGRES_USER }}" || (echo "POSTGRES_USER missing" && exit 1)
+          test -n "${{ secrets.POSTGRES_PASSWORD }}" || (echo "POSTGRES_PASSWORD missing" && exit 1)
+          test -n "${{ secrets.POSTGRES_HOST }}" || (echo "POSTGRES_HOST missing" && exit 1)
+          echo "All required secrets are present."
+
+      - name: Write SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: SSH whoami
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} "whoami && hostname && uname -a"
