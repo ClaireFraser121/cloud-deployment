@@ -1,11 +1,8 @@
 
 # Dockerfile
-# ────────────────────────────────────────────────────────────────
-# WHERE:   Your laptop (source). Copied to EC2 during deploy.
-# WHAT:    Build instructions for the image that will run on EC2.
-# WHY:     Reproducible environment for your app.
-# ────────────────────────────────────────────────────────────────
 
+# codebases/simple_server/Dockerfile
+# ────────────────────────────────────────────────────────────────
 # Small Python base image for faster pulls
 FROM python:3.12-slim
 
@@ -16,14 +13,45 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
-COPY . .
+# Copy only what we need (app code)
+COPY app.py .
 
 # Document the container's internal port
 EXPOSE 5002
 
-# Start the app (the PORT is provided by env; default is 5002)
-CMD ["python", "app.py"]
+# Start the app with Gunicorn (module:object is app:app)
+#  -b 0.0.0.0:5002 binds on the container port your workflow maps
+#  --workers 2 is fine for now
+#  --timeout 60 avoids long requests getting killed too quickly
+CMD ["gunicorn", "app:app", "-b", "0.0.0.0:5002", "--workers", "2", "--timeout", "60"]
+
+
+
+
+# ────────────────────────────────────────────────────────────────
+# WHERE:   Your laptop (source). Copied to EC2 during deploy.
+# WHAT:    Build instructions for the image that will run on EC2.
+# WHY:     Reproducible environment for your app.
+# ────────────────────────────────────────────────────────────────
+
+# # Small Python base image for faster pulls
+# FROM python:3.12-slim
+
+# # Set working directory inside the image
+# WORKDIR /app
+
+# # Install dependencies first (better layer caching)
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir -r requirements.txt
+
+# # Copy the application code
+# COPY . .
+
+# # Document the container's internal port
+# EXPOSE 5002
+
+# # Start the app (the PORT is provided by env; default is 5002)
+# CMD ["python", "app.py"]
 
 
 #__________________________________________________________________
