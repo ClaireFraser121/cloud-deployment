@@ -3,26 +3,15 @@
 
 # codebases/simple_server/Dockerfile
 # ────────────────────────────────────────────────────────────────
-# Small Python base image for faster pulls
 FROM python:3.12-slim
-
-# Set working directory inside the image
 WORKDIR /app
 
-# Install dependencies first (better layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy only what we need (app code)
 COPY app.py .
-
-# Document the container's internal port
 EXPOSE 5002
 
-# Start the app with Gunicorn (module:object is app:app)
-#  -b 0.0.0.0:5002 binds on the container port your workflow maps
-#  --workers 2 is fine for now
-#  --timeout 60 avoids long requests getting killed too quickly
 CMD ["gunicorn", "app:app", "-b", "0.0.0.0:5002", "--workers", "2", "--timeout", "60"]
 
 
