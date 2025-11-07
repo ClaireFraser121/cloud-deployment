@@ -7,10 +7,17 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment: prod
-
     steps:
       - name: Check out
         uses: actions/checkout@v4
+
+      # 🔎 Show what we are about to upload (prove contents)
+      - name: Show local files (Dockerfile & requirements)
+        run: |
+          echo "===== LOCAL Dockerfile ====="
+          sed -n '1,80p' Dockerfile
+          echo "===== LOCAL requirements.txt ====="
+          sed -n '1,80p' requirements.txt
 
       - name: Ensure remote directory exists
         uses: appleboy/ssh-action@v1.0.3
@@ -31,6 +38,19 @@ jobs:
           source: "./Dockerfile,./app.py,./requirements.txt"
           target: "~/message-server"
 
+      # 🔎 Prove the files arrived as expected
+      - name: Show remote files after upload
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "===== REMOTE Dockerfile ====="
+            sed -n '1,80p' ~/message-server/Dockerfile
+            echo "===== REMOTE requirements.txt ====="
+            sed -n '1,80p' ~/message-server/requirements.txt
+
       - name: Build and run on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -40,7 +60,7 @@ jobs:
           script: |
             set -euo pipefail
             cd ~/message-server
-            # Force a fresh build so we don't reuse the old 'python app.py' image
+            # Force a fresh build (no cache)
             docker build --pull --no-cache -t message-server:latest .
             docker stop message-server || true
             docker rm message-server || true
@@ -56,7 +76,7 @@ jobs:
               -e POSTGRES_DB=postgres \
               message-server:latest
 
-            echo "Ports:"
+            echo "===== Ports ====="
             docker ps --format 'table {{.Names}}\t{{.Command}}\t{{.Ports}}' | sed -n '1,5p'
-            echo "Health check:"
+            echo "===== Health check ====="
             curl -s -i http://127.0.0.1:5002/ | sed -n '1,8p'
