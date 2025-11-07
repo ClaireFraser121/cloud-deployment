@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Deploy to EC2
 on:
   push:
@@ -7,7 +8,6 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment: prod
-
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -27,7 +27,6 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          # NOTE: no spaces in the comma list, and paths include the subfolder
           source: "codebases/simple_server/Dockerfile,codebases/simple_server/app.py,codebases/simple_server/requirements.txt"
           target: "~/message-server"
 
